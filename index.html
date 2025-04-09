@@ -21,9 +21,7 @@
         <h3>基金比例计算器（支持保存）</h3>
         
         <!-- 动态添加基金区域 -->
-        <div id="fundsContainer">
-            <!-- 初始行由JavaScript自动生成 -->
-        </div>
+        <div id="fundsContainer"></div>
 
         <button id="addFund" onclick="addFund()">＋ 添加基金</button>
         <button id="clearBtn" onclick="clearData()">🗑️ 清除数据</button>
@@ -39,27 +37,22 @@
     </div>
 
     <script>
-        // 存储标识
         const STORAGE_KEY = "fundCalculatorData";
 
-        // 初始化加载数据
+        // 加载数据
         function loadData() {
             const savedData = localStorage.getItem(STORAGE_KEY);
             if (savedData) {
                 const { funds, userTotal } = JSON.parse(savedData);
-                
-                // 加载基金数据
                 fundsContainer.innerHTML = '';
                 funds.forEach(fund => addFund(fund.name, fund.amount));
-                
-                // 加载总金额
                 document.getElementById("userTotal").value = userTotal || "1735.87";
             } else {
                 addFund(); // 默认添加一行
             }
         }
 
-        // 自动保存数据
+        // 保存数据
         function saveData() {
             const funds = [];
             document.querySelectorAll(".fund-item").forEach(item => {
@@ -68,39 +61,92 @@
                 if (name && !isNaN(amount)) funds.push({ name, amount });
             });
 
-            const data = {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 funds,
                 userTotal: document.getElementById("userTotal").value
-            };
-
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            }));
         }
 
-        // 动态添加基金行（支持初始化值）
+        // 添加基金行
         function addFund(name = '', amount = '') {
             const div = document.createElement("div");
             div.className = "fund-item";
             div.innerHTML = `
-                <input type="text" placeholder="基金名称" class="fund-name" value="${name}"
-                       oninput="saveData()">
-                <input type="number" placeholder="金额（元）" class="fund-amount" step="0.01" 
-                       value="${amount}" oninput="saveData()">
+                <input type="text" placeholder="基金名称" class="fund-name" value="${name}" oninput="saveData()">
+                <input type="number" placeholder="金额（元）" class="fund-amount" step="0.01" value="${amount}" oninput="saveData()">
             `;
             fundsContainer.appendChild(div);
         }
 
-        // 清除所有数据
+        // 清除数据
         function clearData() {
             localStorage.removeItem(STORAGE_KEY);
             fundsContainer.innerHTML = '';
             document.getElementById("userTotal").value = "1735.87";
-            addFund();
+            addFund(); // 添加初始空行
+            document.getElementById("result").innerHTML = ''; // 清空结果
         }
 
-        // 计算逻辑（与之前相同）
-        function calculate() { /* 保持原有计算逻辑不变 */ }
+        // 计算功能
+        function calculate() {
+            const funds = [];
+            let bloggerTotal = 0;
 
-        // 页面加载时自动读取数据
+            document.querySelectorAll(".fund-item").forEach(item => {
+                const name = item.querySelector(".fund-name").value.trim();
+                const amount = parseFloat(item.querySelector(".fund-amount").value);
+                if (name && !isNaN(amount)) {
+                    funds.push({ name, amount });
+                    bloggerTotal += amount;
+                }
+            });
+
+            if (funds.length === 0 || bloggerTotal <= 0) {
+                alert("请至少输入一个有效的基金名称和金额");
+                return;
+            }
+
+            const userTotal = parseFloat(document.getElementById("userTotal").value);
+            if (isNaN(userTotal)) {
+                alert("请输入有效的总金额");
+                return;
+            }
+
+            let html = `
+                <table>
+                    <tr>
+                        <th>基金名称</th>
+                        <th>博主金额（元）</th>
+                        <th>投资比例</th>
+                        <th>你的金额（元）</th>
+                    </tr>`;
+
+            let totalCheck = 0;
+            funds.forEach(fund => {
+                const ratio = (fund.amount / bloggerTotal * 100).toFixed(2) + "%";
+                const userAmount = (userTotal * fund.amount / bloggerTotal).toFixed(2);
+                totalCheck += parseFloat(userAmount);
+
+                html += `
+                    <tr>
+                        <td>${fund.name}</td>
+                        <td>${fund.amount.toFixed(2)}</td>
+                        <td>${ratio}</td>
+                        <td>${userAmount}</td>
+                    </tr>`;
+            });
+
+            html += `
+                <tr style="background: #f0f0f0">
+                    <td colspan="3">总计</td>
+                    <td>${totalCheck.toFixed(2)}</td>
+                </tr>
+            </table>`;
+
+            document.getElementById("result").innerHTML = html;
+        }
+
+        // 初始化
         window.onload = loadData;
     </script>
 </body>
