@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>基金比例计算器（支持名称）</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .fund-item { display: flex; gap: 10px; margin-bottom: 10px; }
+        .fund-item input { padding: 8px; flex: 1; }
+        button { background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; }
+        #addFund { background: #2196F3; margin-bottom: 15px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        td, th { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>基金比例计算器（支持名称）</h3>
+        
+        <!-- 动态添加基金区域 -->
+        <div id="fundsContainer">
+            <div class="fund-item">
+                <input type="text" placeholder="基金名称" class="fund-name">
+                <input type="number" placeholder="金额（元）" class="fund-amount" step="0.01">
+            </div>
+        </div>
+
+        <button id="addFund" onclick="addFund()">＋ 添加基金</button>
+
+        <div class="input-group">
+            <label>你的总金额（元）:</label>
+            <input type="number" id="userTotal" value="1735.87" step="0.01">
+        </div>
+
+        <button onclick="calculate()">立即计算</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 动态添加基金输入行
+        function addFund() {
+            const div = document.createElement("div");
+            div.className = "fund-item";
+            div.innerHTML = `
+                <input type="text" placeholder="基金名称" class="fund-name">
+                <input type="number" placeholder="金额（元）" class="fund-amount" step="0.01">
+            `;
+            document.getElementById("fundsContainer").appendChild(div);
+        }
+
+        // 计算逻辑
+        function calculate() {
+            const funds = [];
+            let bloggerTotal = 0;
+
+            // 收集所有基金数据
+            document.querySelectorAll(".fund-item").forEach(item => {
+                const name = item.querySelector(".fund-name").value.trim();
+                const amount = parseFloat(item.querySelector(".fund-amount").value);
+                
+                if (name && !isNaN(amount)) {
+                    funds.push({ name, amount });
+                    bloggerTotal += amount;
+                }
+            });
+
+            // 输入校验
+            if (funds.length === 0 || bloggerTotal <= 0) {
+                alert("请至少输入一个有效的基金名称和金额");
+                return;
+            }
+
+            const userTotal = parseFloat(document.getElementById("userTotal").value);
+
+            // 生成结果表格
+            let html = `
+                <table>
+                    <tr>
+                        <th>基金名称</th>
+                        <th>博主金额（元）</th>
+                        <th>投资比例</th>
+                        <th>你的金额（元）</th>
+                    </tr>
+            `;
+
+            let totalCheck = 0;
+            funds.forEach(fund => {
+                const ratio = (fund.amount / bloggerTotal * 100).toFixed(2) + "%";
+                const userAmount = (userTotal * fund.amount / bloggerTotal).toFixed(2);
+                totalCheck += parseFloat(userAmount);
+
+                html += `
+                    <tr>
+                        <td>${fund.name}</td>
+                        <td>${fund.amount.toFixed(2)}</td>
+                        <td>${ratio}</td>
+                        <td>${userAmount}</td>
+                    </tr>
+                `;
+            });
+
+            // 添加总计行
+            html += `
+                <tr style="background: #f0f0f0">
+                    <td colspan="3">总计</td>
+                    <td>${totalCheck.toFixed(2)}</td>
+                </tr>
+            </table>
+            `;
+
+            document.getElementById("result").innerHTML = html;
+        }
+    </script>
+</body>
+</html>
